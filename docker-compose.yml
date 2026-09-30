@@ -1,0 +1,10 @@
+services:
+  nexvion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nexvion:1.1
+    container_name: nexvion-app
+    ports:
+      - "8080:80"
+    restart: unless-stopped
