@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexvion-green-version
+  namespace: nexvion-bg
+data:
+  version.txt: |
+    green (image richieit/nexvion:latest)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexvion-green
+  namespace: nexvion-bg
+  labels:
+    app: nexvion
+    color: green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nexvion
+      color: green
+  template:
+    metadata:
+      labels:
+        app: nexvion
+        color: green
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nexvion
+          image: richieit/nexvion:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: version
+              mountPath: /usr/share/nginx/html/version.txt
+              subPath: version.txt
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: version
+          configMap:
+            name: nexvion-green-version
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexvion-green
+  namespace: nexvion-bg
+spec:
+  selector:
+    app: nexvion
+    color: green
+  ports:
+    - port: 80
+      targetPort: 8080

@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-10-08T05:01:42.804846+00:00",
+  "summary": {
+    "window_minutes": 30,
+    "events_analyzed": 72,
+    "access_requests": 76,
+    "http_errors": 36,
+    "error_ratio": 0.474,
+    "status_counts": {
+      "502": 35,
+      "504": 1
+    },
+    "top_paths": {
+      "502": {
+        "/": 25,
+        "/missing-10": 1,
+        "/missing-9": 1,
+        "/missing-8": 1,
+        "/missing-7": 1
+      },
+      "504": {
+        "/": 1
+      }
+    },
+    "containers": {
+      "nexvion-proxy": 72
+    },
+    "log_samples": [
+      "[nexvion-proxy] 2026/10/08 04:53:40 [error] 24#24: *111 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-10 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/miss",
+      "[nexvion-proxy] 2026/10/08 04:53:37 [error] 24#24: *109 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-9 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/missi",
+      "[nexvion-proxy] 2026/10/08 04:53:34 [error] 24#24: *107 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-8 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/missi",
+      "[nexvion-proxy] 2026/10/08 04:53:31 [error] 24#24: *105 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-7 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/missi",
+      "[nexvion-proxy] 2026/10/08 04:53:28 [error] 23#23: *103 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-6 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/missi",
+      "[nexvion-proxy] 2026/10/08 04:53:25 [error] 23#23: *101 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-5 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/missi",
+      "[nexvion-proxy] 2026/10/08 04:53:22 [error] 23#23: *99 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-4 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/missin",
+      "[nexvion-proxy] 2026/10/08 04:53:19 [error] 23#23: *97 connect() failed (113: Host is unreachable) while connecting to upstream, client: 172.23.0.1, server: _, request: \"GET /missing-3 HTTP/1.1\", upstream: \"http://172.23.0.2:8080/missin"
+    ]
+  },
+  "rules_analysis": [
+    {
+      "classification": "Upstream / gateway failure (HTTP 502/503/504)",
+      "severity": "high",
+      "evidence": "36 gateway errors, error ratio 0.474",
+      "probable_root_cause": "The backend behind the proxy is down, restarting or unreachable.",
+      "investigation_steps": [
+        "docker ps / kubectl get pods to see whether the backend is running",
+        "Check proxy error logs for 'connect() failed' or 'upstream' messages",
+        "Check backend health endpoint (/healthz) and recent restarts",
+        "Correlate the first error timestamp with the last deployment"
+      ],
+      "remediation": [
+        "Restart or redeploy the backend",
+        "Roll back the last release if errors began after a deploy",
+        "Add readiness probes / alerts on 5xx ratio"
+      ]
+    }
+  ]
+}

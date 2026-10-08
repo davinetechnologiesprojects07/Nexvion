@@ -1,0 +1,18 @@
+filebeat.inputs:
+  - type: container
+    paths:
+      - /var/lib/docker/containers/*/*.log
+
+processors:
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  - drop_event:
+      when:
+        not:
+          regexp:
+            container.name: '^(nexvion-app|nexvion-proxy|nexvion-ci|nexvion-jenkins)$'
+
+output.logstash:
+  hosts: ["logstash:5044"]
+
+logging.level: warning

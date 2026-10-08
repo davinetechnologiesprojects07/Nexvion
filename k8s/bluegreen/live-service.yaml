@@ -1,0 +1,13 @@
+# The switch: change "color" below (or patch it) to move all traffic
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexvion-live
+  namespace: nexvion-bg
+spec:
+  selector:
+    app: nexvion
+    color: blue
+  ports:
+    - port: 80
+      targetPort: 8080

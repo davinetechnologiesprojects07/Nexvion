@@ -1,0 +1,143 @@
+---
+- name: Configure Nexvion server
+  hosts: web
+  become: true
+
+  vars:
+    app_dir: /opt/nexvion
+    swap_file: /swapfile
+    swap_size: 1G
+
+  tasks:
+    - name: Update apt cache and upgrade packages
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: safe
+        cache_valid_time: 3600
+
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - git
+          - jq
+          - ufw
+          - fail2ban
+          - unattended-upgrades
+          - docker.io
+          - docker-compose-v2
+        state: present
+
+    - name: Create swap file
+      ansible.builtin.command: fallocate -l {{ swap_size }} {{ swap_file }}
+      args:
+        creates: "{{ swap_file }}"
+
+    - name: Set swap file permissions
+      ansible.builtin.file:
+        path: "{{ swap_file }}"
+        mode: "0600"
+
+    - name: Format swap file
+      ansible.builtin.command: mkswap {{ swap_file }}
+      when: ansible_facts['swaptotal_mb'] == 0
+
+    - name: Enable swap
+      ansible.builtin.command: swapon {{ swap_file }}
+      when: ansible_facts['swaptotal_mb'] == 0
+
+    - name: Persist swap in fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        line: "{{ swap_file }} none swap sw 0 0"
+
+    - name: Enable and start Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ubuntu user to docker group
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+    - name: Create application directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    - name: Copy production compose file
+      ansible.builtin.copy:
+        src: files/docker-compose.prod.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+    - name: Allow SSH through firewall
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+
+    - name: Allow HTTP through firewall
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+
+    - name: Enable firewall with default deny
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    - name: Disable SSH password login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config.d/99-hardening.conf
+        create: true
+        mode: "0644"
+        line: "PasswordAuthentication no"
+      notify: Restart SSH
+
+    - name: Disable SSH root login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config.d/99-hardening.conf
+        create: true
+        mode: "0644"
+        line: "PermitRootLogin no"
+      notify: Restart SSH
+
+    - name: Enable fail2ban
+      ansible.builtin.service:
+        name: fail2ban
+        state: started
+        enabled: true
+
+    - name: Deploy Nexvion container
+      ansible.builtin.command: docker compose up -d --pull always
+      args:
+        chdir: "{{ app_dir }}"
+      register: compose_result
+      changed_when: "'Started' in compose_result.stderr or 'Recreated' in compose_result.stderr or 'Created' in compose_result.stderr"
+
+    - name: Wait for app health endpoint
+      ansible.builtin.uri:
+        url: http://127.0.0.1/healthz
+        return_content: true
+      register: health
+      until: "'ok' in health.content"
+      retries: 10
+      delay: 3
+
+  handlers:
+    - name: Restart SSH
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
