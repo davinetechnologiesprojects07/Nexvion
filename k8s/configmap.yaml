@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexvion-config
+  namespace: nexvion
+data:
+  APP_ENV: "staging"
+  APP_NAME: "Nexvion"
