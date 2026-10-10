@@ -1,0 +1,33 @@
+---
+- name: Configure Nexvion EC2 server
+  hosts: nexvion
+  become: true
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.dnf:
+        name:
+          - docker
+          - git
+          - curl-minimal
+        state: present
+
+    - name: Start and enable Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ec2-user to Docker group
+      ansible.builtin.user:
+        name: ec2-user
+        groups: docker
+        append: true
+
+    - name: Create Nexvion application directory
+      ansible.builtin.file:
+        path: /opt/nexvion
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+        mode: '0755'

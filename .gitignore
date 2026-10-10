@@ -1,0 +1,12 @@
+logs/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/crash.log
+
+# SSH private keys
+*.pem
+*.key

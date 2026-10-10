@@ -1,0 +1,8 @@
+.git
+.gitignore
+.gitattributes
+scripts
+logs
+README.txt
+*.log
+.DS_Store

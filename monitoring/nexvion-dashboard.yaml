@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexvion-grafana-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  nexvion-dashboard.json: |
+    {
+      "title": "Nexvion Kubernetes Overview",
+      "uid": "nexvion-k8s",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": {
+        "from": "now-30m",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Available Replicas",
+          "id": 1,
+          "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace=\"nexvion-helm\",deployment=\"nexvion\"}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Desired Replicas",
+          "id": 2,
+          "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "kube_deployment_spec_replicas{namespace=\"nexvion-helm\",deployment=\"nexvion\"}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Running Pods",
+          "id": 3,
+          "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_status_phase{namespace=\"nexvion-helm\",pod=~\"nexvion-.*\",phase=\"Running\"})",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Container Restarts",
+          "id": 4,
+          "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"nexvion-helm\",pod=~\"nexvion-.*\"})",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

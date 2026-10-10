@@ -1,0 +1,30 @@
+---
+- name: Deploy Nexvion on AWS EC2
+  hosts: nexvion
+  become: true
+
+  tasks:
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull Nexvion image
+      command: docker pull nidhi8901/nexvion:2
+
+    - name: Remove old container
+      shell: docker rm -f nexvion 2>/dev/null || true
+
+    - name: Run Nexvion
+      command: >
+        docker run -d
+        --name nexvion
+        --restart unless-stopped
+        -p 80:80
+        nidhi8901/nexvion:2
+
+    - name: Verify application
+      uri:
+        url: http://127.0.0.1
+        status_code: 200

@@ -1,0 +1,30 @@
+replicaCount: 2
+
+image:
+  repository: nidhi8901/nexvion
+  tag: "2"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+config:
+  appName: Nexvion
+  appEnv: production
+
+secret:
+  appSecret: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  host: nexvion-helm.local
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
